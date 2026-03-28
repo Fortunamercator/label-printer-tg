@@ -13,9 +13,55 @@ const PDFGenerator = {
         return `${day}.${month}.${year}`;
     },
 
-    generateLabel(template, date, quantity) {
+    fillLabelTemplate(template, date) {
+        const formattedDate = this.formatDate(date);
+        
+        document.getElementById('label-title').textContent = `${template.id} ${template.name}`;
+        document.getElementById('label-color').textContent = template.color ? `Цвет: ${template.color}` : '';
+        document.getElementById('label-size').textContent = template.size || '';
+        document.getElementById('label-country').textContent = template.country ? `Страна: ${template.country}` : '';
+        
+        const mfgEl = document.getElementById('label-manufacturer');
+        if (template.manufacturer) {
+            const lines = template.manufacturer.split('\n');
+            mfgEl.innerHTML = `Производитель: ${lines[0]}${lines.length > 1 ? '<br>' + lines.slice(1).join('<br>') : ''}`;
+        } else {
+            mfgEl.textContent = '';
+        }
+        
+        document.getElementById('label-material').textContent = template.material ? `Материал: ${template.material}` : '';
+        document.getElementById('label-date').textContent = `Дата изготовления: ${formattedDate}`;
+        
+        if (template.barcode) {
+            try {
+                JsBarcode('#label-barcode', template.barcode, {
+                    format: 'EAN13',
+                    width: 1.2,
+                    height: 30,
+                    fontSize: 10,
+                    margin: 2
+                });
+            } catch (e) {
+                console.error('Barcode error:', e);
+            }
+        }
+    },
+
+    async generateLabel(template, date, quantity) {
         const labelWidth = 58;
         const labelHeight = 40;
+        
+        this.fillLabelTemplate(template, date);
+        
+        const labelContent = document.getElementById('label-content');
+        
+        const canvas = await html2canvas(labelContent, {
+            scale: 3,
+            backgroundColor: '#ffffff',
+            logging: false
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
         
         const doc = new this.jsPDF({
             orientation: 'landscape',
@@ -23,88 +69,13 @@ const PDFGenerator = {
             format: [labelWidth, labelHeight]
         });
 
-        const formattedDate = this.formatDate(date);
-
         for (let i = 0; i < quantity; i++) {
             if (i > 0) {
                 doc.addPage([labelWidth, labelHeight], 'landscape');
             }
-            this.drawLabel(doc, template, formattedDate, labelWidth, labelHeight);
+            doc.addImage(imgData, 'PNG', 0, 0, labelWidth, labelHeight);
         }
 
         return doc.output('bloburl');
-    },
-
-    drawLabel(doc, template, date, width, height) {
-        const margin = 2;
-        const lineHeight = 3.5;
-        let y = margin + 1;
-
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        
-        const title = `${template.id} ${template.name}`;
-        const titleLines = doc.splitTextToSize(title, width - margin * 2);
-        doc.text(titleLines, margin, y);
-        y += titleLines.length * lineHeight;
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-
-        if (template.color) {
-            doc.text(`Цвет: ${template.color}`, margin, y);
-            
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.text(template.size, width - margin, y, { align: 'right' });
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(7);
-            y += lineHeight;
-        }
-
-        y += 1;
-
-        if (template.country) {
-            doc.text(`Страна: ${template.country}`, margin, y);
-            y += lineHeight;
-        }
-
-        if (template.manufacturer) {
-            const mfgLines = template.manufacturer.split('\n');
-            doc.text(`Производитель: ${mfgLines[0]}`, margin, y);
-            y += lineHeight;
-            
-            for (let i = 1; i < mfgLines.length; i++) {
-                doc.text(mfgLines[i], margin, y);
-                y += lineHeight;
-            }
-        }
-
-        if (template.material) {
-            doc.text(`Материал: ${template.material}`, margin, y);
-            y += lineHeight;
-        }
-
-        doc.text(`Дата изготовления: ${date}`, margin, y);
-        y += lineHeight + 1;
-
-        if (template.barcode) {
-            const barcodeImg = BarcodeGenerator.generateForLabel(template.barcode);
-            if (barcodeImg) {
-                const barcodeWidth = 35;
-                const barcodeHeight = 10;
-                const barcodeX = (width - barcodeWidth) / 2;
-                
-                try {
-                    doc.addImage(barcodeImg, 'PNG', barcodeX, y, barcodeWidth, barcodeHeight);
-                } catch (e) {
-                    console.error('Error adding barcode to PDF:', e);
-                }
-            }
-        }
-
-        doc.setDrawColor(0);
-        doc.setLineWidth(0.2);
-        doc.rect(0.5, 0.5, width - 1, height - 1);
     }
 };

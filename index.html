@@ -7,6 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -64,6 +65,24 @@
     
     <!-- Скрытый canvas для генерации штрих-кода -->
     <canvas id="barcode-canvas" style="display: none;"></canvas>
+    
+    <!-- Шаблон этикетки для рендеринга -->
+    <div id="label-template" style="position: absolute; left: -9999px; top: -9999px;">
+        <div id="label-content" style="width: 220px; height: 150px; padding: 8px; box-sizing: border-box; font-family: Arial, sans-serif; background: white; border: 1px solid #000;">
+            <div id="label-title" style="font-size: 9px; font-weight: bold; line-height: 1.2; margin-bottom: 4px;"></div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span id="label-color" style="font-size: 8px;"></span>
+                <span id="label-size" style="font-size: 14px; font-weight: bold;"></span>
+            </div>
+            <div id="label-country" style="font-size: 8px; margin-top: 3px;"></div>
+            <div id="label-manufacturer" style="font-size: 8px; line-height: 1.2;"></div>
+            <div id="label-material" style="font-size: 8px;"></div>
+            <div id="label-date" style="font-size: 8px;"></div>
+            <div style="text-align: center; margin-top: 4px;">
+                <canvas id="label-barcode"></canvas>
+            </div>
+        </div>
+    </div>
     
     <script src="js/storage.js"></script>
     <script src="js/barcode.js"></script>
