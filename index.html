@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Печать этикеток</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Экран формы -->
+        <div id="form-screen" class="screen active">
+            <h1>Печать этикеток</h1>
+            
+            <div class="form-group">
+                <label for="template-select">Товар (полка)</label>
+                <select id="template-select">
+                    <option value="">Загрузка...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="quantity">Количество этикеток</label>
+                <input type="number" id="quantity" min="1" max="100" value="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="date">Дата изготовления</label>
+                <input type="date" id="date">
+            </div>
+            
+            <button id="generate-btn" class="btn btn-primary" disabled>
+                Сформировать
+            </button>
+        </div>
+        
+        <!-- Экран превью -->
+        <div id="preview-screen" class="screen">
+            <div class="preview-header">
+                <button id="back-btn" class="btn btn-secondary">← Назад</button>
+                <h2>Превью</h2>
+            </div>
+            
+            <div id="preview-container">
+                <iframe id="pdf-preview" title="PDF Preview"></iframe>
+            </div>
+            
+            <div class="preview-actions">
+                <button id="print-btn" class="btn btn-primary">
+                    🖨️ Печать
+                </button>
+            </div>
+        </div>
+        
+        <!-- Загрузка -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Формирование PDF...</p>
+        </div>
+    </div>
+    
+    <!-- Скрытый canvas для генерации штрих-кода -->
+    <canvas id="barcode-canvas" style="display: none;"></canvas>
+    
+    <script src="js/storage.js"></script>
+    <script src="js/barcode.js"></script>
+    <script src="js/pdf-generator.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
