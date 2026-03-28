@@ -182,13 +182,13 @@ const App = {
 
     printPDF() {
         if (this.currentPdfUrl) {
-            const printWindow = window.open(this.currentPdfUrl, '_blank');
-            if (printWindow) {
-                printWindow.onload = function() {
-                    printWindow.print();
-                };
+            if (window.Telegram?.WebApp?.openLink) {
+                window.Telegram.WebApp.openLink(this.currentPdfUrl);
             } else {
-                this.elements.pdfPreview.contentWindow.print();
+                const link = document.createElement('a');
+                link.href = this.currentPdfUrl;
+                link.target = '_blank';
+                link.click();
             }
         }
     }
