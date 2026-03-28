@@ -181,13 +181,17 @@ const App = {
     },
 
     printPDF() {
-        if (this.currentPdfUrl) {
-            const link = document.createElement('a');
-            link.href = this.currentPdfUrl;
-            link.download = 'label.pdf';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        if (!this.currentPdfUrl) return;
+        
+        try {
+            const iframe = this.elements.pdfPreview;
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            }
+        } catch (e) {
+            console.error('Print error:', e);
+            window.print();
         }
     }
 };
