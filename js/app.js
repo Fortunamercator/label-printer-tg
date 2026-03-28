@@ -166,7 +166,7 @@ const App = {
         try {
             await new Promise(resolve => setTimeout(resolve, 100));
             
-            const pdfUrl = PDFGenerator.generateLabel(template, date, quantity);
+            const pdfUrl = await PDFGenerator.generateLabel(template, date, quantity);
             this.currentPdfUrl = pdfUrl;
             
             this.elements.pdfPreview.src = pdfUrl;
