@@ -180,18 +180,29 @@ const App = {
         }
     },
 
-    printPDF() {
+    async printPDF() {
         if (!this.currentPdfUrl) return;
         
         try {
-            const iframe = this.elements.pdfPreview;
-            if (iframe && iframe.contentWindow) {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
+            const response = await fetch(this.currentPdfUrl);
+            const blob = await response.blob();
+            const file = new File([blob], 'etiquette.pdf', { type: 'application/pdf' });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Этикетка',
+                    text: 'Сохраните или отправьте на печать'
+                });
+            } else {
+                const link = document.createElement('a');
+                link.href = this.currentPdfUrl;
+                link.download = 'etiquette.pdf';
+                link.click();
             }
         } catch (e) {
-            console.error('Print error:', e);
-            window.print();
+            console.error('Share error:', e);
+            alert('Сохраните скриншот или откройте в браузере Safari');
         }
     }
 };
