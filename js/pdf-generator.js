@@ -13,69 +13,139 @@ const PDFGenerator = {
         return `${day}.${month}.${year}`;
     },
 
-    fillLabelTemplate(template, date) {
+    async generateLabel(template, date, quantity) {
+        const labelWidthMM = 58;
+        const labelHeightMM = 40;
+        
         const formattedDate = this.formatDate(date);
         
-        document.getElementById('label-title').textContent = `${template.id} ${template.name}`;
-        document.getElementById('label-color').textContent = template.color ? `Цвет: ${template.color}` : '';
-        document.getElementById('label-size').textContent = template.size || '';
-        document.getElementById('label-country').textContent = template.country ? `Страна: ${template.country}` : '';
+        const scale = 4;
+        const labelWidthPx = labelWidthMM * scale;
+        const labelHeightPx = labelHeightMM * scale;
         
-        const mfgEl = document.getElementById('label-manufacturer');
-        if (template.manufacturer) {
-            const lines = template.manufacturer.split('\n');
-            mfgEl.innerHTML = `Производитель: ${lines[0]}${lines.length > 1 ? '<br>' + lines.slice(1).join('<br>') : ''}`;
-        } else {
-            mfgEl.textContent = '';
+        const canvas = document.createElement('canvas');
+        canvas.width = labelWidthPx;
+        canvas.height = labelHeightPx;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, labelWidthPx, labelHeightPx);
+        
+        ctx.fillStyle = '#000000';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(1, 1, labelWidthPx - 2, labelHeightPx - 2);
+        
+        const margin = 8;
+        let y = margin + 12;
+        
+        ctx.font = 'bold 12px Arial, sans-serif';
+        const title = `${template.id} ${template.name}`;
+        const titleLines = this.wrapText(ctx, title, labelWidthPx - margin * 2);
+        for (const line of titleLines) {
+            ctx.fillText(line, margin, y);
+            y += 14;
         }
         
-        document.getElementById('label-material').textContent = template.material ? `Материал: ${template.material}` : '';
-        document.getElementById('label-date').textContent = `Дата изготовления: ${formattedDate}`;
+        y += 2;
+        
+        ctx.font = '10px Arial, sans-serif';
+        if (template.color) {
+            ctx.fillText(`Цвет: ${template.color}`, margin, y);
+        }
+        
+        if (template.size) {
+            ctx.font = 'bold 18px Arial, sans-serif';
+            const sizeWidth = ctx.measureText(template.size).width;
+            ctx.fillText(template.size, labelWidthPx - margin - sizeWidth, y);
+        }
+        
+        ctx.font = '10px Arial, sans-serif';
+        y += 14;
+        
+        if (template.country) {
+            ctx.fillText(`Страна: ${template.country}`, margin, y);
+            y += 12;
+        }
+        
+        if (template.manufacturer) {
+            const mfgLines = template.manufacturer.split('\n');
+            ctx.fillText(`Производитель: ${mfgLines[0]}`, margin, y);
+            y += 12;
+            for (let i = 1; i < mfgLines.length; i++) {
+                ctx.fillText(mfgLines[i], margin, y);
+                y += 12;
+            }
+        }
+        
+        if (template.material) {
+            ctx.fillText(`Материал: ${template.material}`, margin, y);
+            y += 12;
+        }
+        
+        ctx.fillText(`Дата изготовления: ${formattedDate}`, margin, y);
+        y += 16;
         
         if (template.barcode) {
+            const barcodeCanvas = document.createElement('canvas');
             try {
-                JsBarcode('#label-barcode', template.barcode, {
+                JsBarcode(barcodeCanvas, template.barcode, {
                     format: 'EAN13',
-                    width: 1.2,
-                    height: 30,
-                    fontSize: 10,
-                    margin: 2
+                    width: 2,
+                    height: 40,
+                    fontSize: 12,
+                    margin: 0,
+                    displayValue: true
                 });
+                
+                const barcodeWidth = 140;
+                const barcodeHeight = 50;
+                const barcodeX = (labelWidthPx - barcodeWidth) / 2;
+                ctx.drawImage(barcodeCanvas, barcodeX, y, barcodeWidth, barcodeHeight);
             } catch (e) {
                 console.error('Barcode error:', e);
             }
         }
-    },
-
-    async generateLabel(template, date, quantity) {
-        const labelWidth = 58;
-        const labelHeight = 40;
         
-        this.fillLabelTemplate(template, date);
-        
-        const labelContent = document.getElementById('label-content');
-        
-        const canvas = await html2canvas(labelContent, {
-            scale: 3,
-            backgroundColor: '#ffffff',
-            logging: false
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL('image/png', 1.0);
         
         const doc = new this.jsPDF({
             orientation: 'landscape',
             unit: 'mm',
-            format: [labelWidth, labelHeight]
+            format: [labelWidthMM, labelHeightMM]
         });
 
         for (let i = 0; i < quantity; i++) {
             if (i > 0) {
-                doc.addPage([labelWidth, labelHeight], 'landscape');
+                doc.addPage([labelWidthMM, labelHeightMM], 'landscape');
             }
-            doc.addImage(imgData, 'PNG', 0, 0, labelWidth, labelHeight);
+            doc.addImage(imgData, 'PNG', 0, 0, labelWidthMM, labelHeightMM);
         }
 
         return doc.output('bloburl');
+    },
+    
+    wrapText(ctx, text, maxWidth) {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+        
+        for (const word of words) {
+            const testLine = currentLine ? currentLine + ' ' + word : word;
+            const metrics = ctx.measureText(testLine);
+            
+            if (metrics.width > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        }
+        
+        if (currentLine) {
+            lines.push(currentLine);
+        }
+        
+        return lines;
     }
 };
