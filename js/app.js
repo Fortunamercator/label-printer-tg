@@ -182,14 +182,12 @@ const App = {
 
     printPDF() {
         if (this.currentPdfUrl) {
-            if (window.Telegram?.WebApp?.openLink) {
-                window.Telegram.WebApp.openLink(this.currentPdfUrl);
-            } else {
-                const link = document.createElement('a');
-                link.href = this.currentPdfUrl;
-                link.target = '_blank';
-                link.click();
-            }
+            const link = document.createElement('a');
+            link.href = this.currentPdfUrl;
+            link.download = 'label.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     }
 };
